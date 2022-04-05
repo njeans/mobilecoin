@@ -18,7 +18,8 @@ permissions:
 
 jobs:
   mc-tests:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, large]
+    container: mobilecoin/rust-sgx-base:latest
 
     strategy:
       matrix:
@@ -56,7 +57,8 @@ jobs:
 
 
   consensus-tests:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, large]
+    container: mobilecoin/rust-sgx-base:latest
 
     strategy:
       matrix:
@@ -88,7 +90,8 @@ jobs:
 
 
   fog-tests:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, large]
+    container: mobilecoin/rust-sgx-base:latest
 
     strategy:
       matrix:
@@ -143,7 +146,9 @@ jobs:
 
 
   fog-ingest-tests:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, large]
+    container: mobilecoin/rust-sgx-base:latest
+
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -175,7 +180,8 @@ jobs:
 
 
   fog-conformance-tests:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, large]
+    container: mobilecoin/rust-sgx-base:latest
 
     env:
       PGHOST: postgres
@@ -238,7 +244,8 @@ jobs:
 
 
   fog-local-network-tests:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, large]
+    container: mobilecoin/rust-sgx-base:latest
 
     env:
       PGHOST: postgres
@@ -364,7 +371,7 @@ jobs:
 
 
   publish-test-results:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, small]
     if: success() || failure()
     needs:
       - mc-tests
