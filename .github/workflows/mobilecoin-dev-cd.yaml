@@ -84,7 +84,6 @@ jobs:
     env:
       ENCLAVE_SIGNING_KEY_PATH: ${{ github.workspace }}/.tmp/enclave_signing.pem
       MINTING_TRUST_ROOT_PUBLIC_KEY_PEM: ${{ github.workspace }}/.tmp/minting_trust_root.public.pem
-
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -117,9 +116,9 @@ jobs:
 
     - name: Write environment values
       run: |
-        mkdir -p ${GITHUB_WORKSPACE}/.tmp
-        echo "{{ secrets.DEV_ENCLAVE_SIGNING_KEY }}" > "${ENCLAVE_SIGNING_KEY_PATH}"
-        echo -n "{{ secret.DEV_MINTING_TRUST_ROOT_PUBLIC" }}" > "${MINTING_TRUST_ROOT_PUBLIC_KEY_PEM}"
+        mkdir -p "${GITHUB_WORKSPACE}/.tmp"
+        echo -n "{{ secrets.DEV_ENCLAVE_SIGNING_KEY }}" > "${ENCLAVE_SIGNING_KEY_PATH}"
+        echo -n "{{ secrets.DEV_MINTING_TRUST_ROOT_PUBLIC }}" > "${MINTING_TRUST_ROOT_PUBLIC_KEY_PEM}"
 
     - name: Build rust hardware projects
       if: |
