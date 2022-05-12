@@ -36,7 +36,7 @@ class FogNetwork(Network):
         cmd = ' && '.join([
             f'dropdb --if-exists {FOG_SQL_DATABASE_NAME}',
             f'createdb {FOG_SQL_DATABASE_NAME}',
-            f'DATABASE_URL=postgres://localhost/{FOG_SQL_DATABASE_NAME} {PROJECT_DIR}/{TARGET_DIR}/fog-sql-recovery-db-migrations',
+            f'{DATABASE_URL_ENV} {PROJECT_DIR}/{TARGET_DIR}/fog-sql-recovery-db-migrations',
         ])
         print(f'Creating postgres database: {cmd}')
         subprocess.check_output(cmd, shell=True)
@@ -47,7 +47,7 @@ class FogNetwork(Network):
         print("Starting fog services...")
         try:
             # TODO
-            subprocess.check_output("killall -9 fog_ingest_server 2>/dev/null", shell=True)
+            subprocess.check_output("pkill -9 fog_ingest_server 2>/dev/null", shell=True)
         except subprocess.CalledProcessError as exc:
             if exc.returncode != 1:
                 raise
@@ -135,16 +135,16 @@ class FogNetwork(Network):
         result = subprocess.check_output(cmd, shell=True)
 
     def stop(self):
-        if hasattr(self, "fog_ledger"):
+        if hasattr(self, "fog_ledger") and self.fog_ledger is not None:
             self.fog_ledger.stop()
 
-        if hasattr(self, "fog_report"):
+        if hasattr(self, "fog_report") and self.fog_report is not None:
             self.fog_report.stop()
 
-        if hasattr(self, "fog_view"):
+        if hasattr(self, "fog_view") and self.fog_view is not None:
             self.fog_view.stop()
 
-        if hasattr(self, "fog_ingest"):
+        if hasattr(self, "fog_ingest") and self.fog_ingest is not None:
             self.fog_ingest.stop()
 
 if __name__ == '__main__':
