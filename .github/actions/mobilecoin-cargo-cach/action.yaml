@@ -1,0 +1,40 @@
+name: Mobilecoin Cargo Cache
+description: Standardized Cargo cache setup
+
+inputs:
+  cache_buster:
+    description: "string to make cache unique"
+    required: false
+  path:
+    description: "path to mount cache"
+    required: false
+    default: |
+      rust_build_artifacts
+  hash_files:
+    description: "list of files/globs to hash"
+    required: false
+    default: "'**/*.rs', '**/*.proto', '**/Cargo.toml'"
+
+
+outputs:
+  branch:
+    description: "normalized branch name"
+    value: ${{ steps.meta.outputs.branch }}
+  namespace:
+    description: "namespace based off normalized branch name"
+    value: ${{ steps.meta.outputs.namespace }}
+  tag:
+    description: "artifact semver tag based off of branch patterns"
+    value: ${{ steps.meta.outputs.tag }}
+
+runs:
+  using: composite
+  steps:
+  - name: Cache rust build binaries
+    id: rust_artifact_cache
+    uses: actions/cache@v3
+    with:
+      path: ${{ inputs.path }}
+      # Key is a hash of all the .rs, .proto and Cargo.toml files.
+      # if code changes, invalidate cache and rebuild
+      key: ${{ inputs.cache_buster }}-${{ runner.os }}-${{ hashFiles(inputs.hash_files) }}-rust-build-artifacts

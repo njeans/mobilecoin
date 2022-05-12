@@ -117,8 +117,8 @@ jobs:
     - name: Write environment values
       run: |
         mkdir -p "${GITHUB_WORKSPACE}/.tmp"
-        echo -n "{{ secrets.DEV_ENCLAVE_SIGNING_KEY }}" > "${ENCLAVE_SIGNING_KEY_PATH}"
-        echo -n "{{ secrets.DEV_MINTING_TRUST_ROOT_PUBLIC }}" > "${MINTING_TRUST_ROOT_PUBLIC_KEY_PEM}"
+        echo "${{ secrets.DEV_ENCLAVE_SIGNING_KEY }}" > "${ENCLAVE_SIGNING_KEY_PATH}"
+        echo "${{ secrets.DEV_MINTING_TRUST_ROOT_PUBLIC }}" > "${MINTING_TRUST_ROOT_PUBLIC_KEY_PEM}"
 
     - name: Build rust hardware projects
       if: |
