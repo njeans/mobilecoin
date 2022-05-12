@@ -1,0 +1,66 @@
+name: Docker Combo Move
+description: Mobilecoin standardized docker build and publish steps.
+
+inputs:
+  flavor:
+    description: "Docker metadata-action flavor override"
+    required: false
+  image:
+    description: "Docker metadata-action image"
+    required: true
+  labels:
+    description: "Docker metadata-action labels override"
+    required: false
+  tags:
+    description: "Docker metadata-action tags override"
+    default: |
+      type=ref,event=pr,priority=30
+      type=semver,pattern=v{{version}},priority=20
+      type=sha,priority=10
+    required: false
+
+  username:
+    description: "Docker login-action username"
+    required: true
+  password:
+    description: "Docker login-action password"
+    required: true
+
+  build_args:
+    description: "Docker build publish action (build-args)"
+    required: false
+  cache_from:
+    description: "Docker build publish action (cache-from)"
+    required: false
+  cache_to:
+    description: "Docker build publish action (cache-from)"
+    required: false
+  context:
+    description: "Docker build publish action (context)"
+    required: false
+    default: .
+  file:
+    description: "Docker build publish action (file)"
+    required: false
+  push:
+    description: "Docker build publish action (push)"
+    required: false
+    default: 'true'
+
+outputs: {}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Generate Docker Tags
+      id: docker_meta
+      uses: docker/metadata-action@v3
+      with:
+        images: ${{ env.DOCKER_ORG }}/runtime-base
+        flavor: |
+          latest=true
+        tags: |
+          type=sha

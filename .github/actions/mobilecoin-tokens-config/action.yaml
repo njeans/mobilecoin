@@ -1,0 +1,6 @@
+name: Tokens Config
+description: Mobilecoin consensus create/sign token config.
+
+runs:
+  using: docker
+  imgae:
