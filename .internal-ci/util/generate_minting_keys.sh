@@ -19,19 +19,32 @@ then
     "${location}/generate_ed25519_keys.sh" \
         --public-out "${BASE_PATH}/minter1_governor.public.pem" \
         --private-out "${BASE_PATH}/minter1_governor.private.pem"
+else
+    echo "minter1_governor keys already exist"
 fi
+sha256sum "${BASE_PATH}/minter1_governor.private.pem"
+sha256sum "${BASE_PATH}/minter1_governor.public.pem"
 
 # Token 1 signer keys
 # This key pair is used to validate MintTX
 if [[ ! -f "${BASE_PATH}/token_signer.private.pem" ]]
 then
+    echo "Writing token1_signer keys"
     "${location}/generate_ed25519_keys.sh" \
         --public-out "${BASE_PATH}/token1_signer.public.pem" \
         --private-out "${BASE_PATH}/token1_signer.private.pem"
+else
+    echo "token1_signer keys already exist"
 fi
+sha256sum "${BASE_PATH}/token1_signer.private.pem"
+sha256sum "${BASE_PATH}/token1_signer.public.pem"
 
 # Write minting trust root private key if its defined.
 if [[ -n "${MINTING_TRUST_ROOT_PRIVATE}" ]]
 then
+    echo "Writing minting_trust_root.private.pem"
     echo "${MINTING_TRUST_ROOT_PRIVATE}" > "${BASE_PATH}/minting_trust_root.private.pem"
+    sha256sum "${BASE_PATH}/minting_trust_root.private.pem"
+else
+    echo "MINTING_TRUST_ROOT_PRIVATE not defined"
 fi

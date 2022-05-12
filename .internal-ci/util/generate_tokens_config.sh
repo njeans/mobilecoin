@@ -19,8 +19,12 @@ BASE_PATH="${BASE_PATH:-.tmp/seeds/minting}"
 
 # check for required files
 exists "${location}/tokens.base.json"
+
 exists "${BASE_PATH}/minter1_governor.public.pem"
-exists "${BASE_PATH}/minting-trust-root.private.pem"
+sha256sum "${BASE_PATH}/minter1_governor.public.pem"
+
+exists "${BASE_PATH}/minting_trust_root.private.pem"
+sha256sum "${BASE_PATH}/minting_trust_root.private.pem"
 
 # Grab base json
 json=$(cat "${location}/tokens.base.json")
@@ -35,5 +39,5 @@ echo "$json" | jq . > .tmp/tokens.json
 
 # Sign tokens file
 mc-consensus-mint-client sign-governors --tokens .tmp/tokens.json \
-    --signing-key "${BASE_PATH}/minting-trust-root.private.pem" \
+    --signing-key "${BASE_PATH}/minting_trust_root.private.pem" \
     --output-json .tmp/tokens.signed.json
