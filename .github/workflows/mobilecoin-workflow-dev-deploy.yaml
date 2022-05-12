@@ -185,8 +185,7 @@ jobs:
     - name: Create and sign tokens config
       if: inputs.enable_minting_config == 'true'
       uses: docker://mobilecoin/bootstrap-toolbox:{{ inputs.version }}
-      run: |
-        ls -al /usr/local/bin/mc-consensus-mint-client
+
 
     # push as
 
