@@ -60,6 +60,15 @@ on:
       FOG_REPORT_SIGNING_CA_CERT:
         description: "Fog Report signing CA cert"
         required: true
+      MINTING_TRUST_ROOT_PRIVATE:
+        description: "Root private key for singing the tokens config"
+        required: false
+      DOCKERHUB_TOKEN:
+        description: "Docker hub creds"
+        required: false
+      DOCKERHUB_USER:
+        description: "Docker hub creds"
+        required: false
 
 jobs:
   list-values:
@@ -161,11 +170,30 @@ jobs:
 # build a "latest" container with the signing util? - could be messy
 # could grab current toolbox and check if util is there.
 
-    - name: Create minting seeds
+    - name: Create minting keys
       if: inputs.enable_minting_config == 'true'
-      id: minting
+      env:
+        MINTING_TRUST_ROOT_PRIVATE: ${{ secrets.MINTING_TRUST_ROOT_PRIVATE }}
       run: |
         .internal-ci/util/generate_minting_keys.sh
+
+    - name: Login to DockerHub
+      if: inputs.enable_minting_config == 'true'
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    # run bootstrap
+    - name: Generate and sign tokens config
+      if: inputs.enable_minting_config == 'true'
+      run: |
+        docker run \
+          -v ${{ github.workspace }}:/workspace \
+          --network none \
+          --workdir /workspace \
+          ${{ inputs.docker_image_org }}/bootstrap-toolbox:${{ inputs.version }} \
+          .internal-ci/util/generate_tokens_config.sh
 
     - name: Create minting key secrets
       if: inputs.enable_minting_config == 'true'
@@ -176,15 +204,26 @@ jobs:
         rancher_cluster: ${{ secrets.RANCHER_CLUSTER }}
         rancher_url: ${{ secrets.RANCHER_URL }}
         rancher_token: ${{ secrets.RANCHER_TOKEN }}
-        object_name: consensus-minting-keys
+        object_name: consensus-minting-secrets
         src: .tmp/seeds/minting
+
+    - name: Create tokens configmap
+      if: inputs.enable_minting_config == 'true'
+      with:
+        action: configmap-create-from-file
+        namespace: ${{ inputs.namespace }}
+        rancher_cluster: ${{ secrets.RANCHER_CLUSTER }}
+        rancher_url: ${{ secrets.RANCHER_URL }}
+        rancher_token: ${{ secrets.RANCHER_TOKEN }}
+        object_name: consensus-tokens-config
+        src: .tmp/tokens.signed.json
 
     # Create and sign `tokens.json`
     # add tools to tool box?
     #- mc-consensus-mint-client
-    - name: Create and sign tokens config
-      if: inputs.enable_minting_config == 'true'
-      uses: docker://mobilecoin/bootstrap-toolbox:${{ inputs.version }}
+    # - name: Create and sign tokens config
+    #   if: inputs.enable_minting_config == 'true'
+
 
 
     # push as

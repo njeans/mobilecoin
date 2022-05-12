@@ -29,3 +29,9 @@ then
         --public-out "${BASE_PATH}/token1_signer.public.pem" \
         --private-out "${BASE_PATH}/token1_signer.private.pem"
 fi
+
+# Write minting trust root private key if its defined.
+if [[ -n "${MINTING_TRUST_ROOT_PRIVATE}" ]]
+then
+    echo "${MINTING_TRUST_ROOT_PRIVATE}" > "${BASE_PATH}/minting_trust_root.private.pem"
+fi

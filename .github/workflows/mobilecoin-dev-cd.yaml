@@ -48,33 +48,6 @@ jobs:
       run: |
         .internal-ci/util/print_details.sh
 
-############################################
-# Generate seeds
-############################################
-  # generate-seeds:
-  #   runs-on: [self-hosted, Linux, small]
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v3
-
-  #   - name: Cache seeds
-  #     id: seeds
-  #     uses: actions/cache@v3
-  #     with:
-  #       path: |
-  #         .tmp/seeds
-  #       key: ${{ github.ref_name }}-seeds
-
-  #   - name: Create wallet seeds
-  #     run: |
-  #       .internal-ci/util/generate_wallet_seeds.sh
-
-  #   # TODO: needs some clean up around passing the minting_trust_root into the build, before we can start generating.
-  #   - name: Create minting seeds
-  #     run: |
-  #       .internal-ci/util/generate_minting_keys.sh
-
-
 #########################################
 # Build binaries
 #########################################
@@ -89,6 +62,16 @@ jobs:
     - name: Checkout
       if: "! contains(github.event.head_commit.message, '[skip build]')"
       uses: actions/checkout@v3
+
+    - name: Write environment values
+      if: "! contains(github.event.head_commit.message, '[skip build]')"
+      env:
+        ENCLAVE_SIGNING_KEY: ${{ secrets.DEV_ENCLAVE_SIGNING_KEY }}
+        MINTING_TRUST_ROOT_PUBLIC: ${{ secrets.DEV_MINTING_TRUST_ROOT_PUBLIC }}
+      run: |
+        mkdir -p "${GITHUB_WORKSPACE}/.tmp"
+        echo "${ENCLAVE_SIGNING_KEY}" > "${ENCLAVE_SIGNING_KEY_PATH}"
+        echo "${MINTING_TRUST_ROOT_PUBLIC}" > "${MINTING_TRUST_ROOT_PUBLIC_KEY_PEM}"
 
     - name: Cache rust build binaries
       if: "! contains(github.event.head_commit.message, '[skip build]')"
@@ -105,39 +88,6 @@ jobs:
       uses: ./.github/actions/mobilecoin-cache-cargo-package
       with:
         cache_buster: ${{ secrets.CACHE_BUSTER }}
-
-    # - name: Cache rust build binaries
-    #   if: "! contains(github.event.head_commit.message, '[skip build]')"
-    #   id: rust_artifact_cache
-    #   uses: actions/cache@v3
-    #   with:
-    #     path: |
-    #       rust_build_artifacts
-    #     # Key is a hash of all the .rs, .proto and Cargo.toml files.
-    #     # if code changes, invalidate cache and rebuild
-    #     key: ${{ secrets.CACHE_BUSTER }}-${{ runner.os }}-${{ hashFiles('**/*.rs', '**/*.proto', '**/Cargo.toml') }}-rust-build-artifacts
-
-    # - name: Cache cargo packages
-    #   # We don't need cargo packages if we already have binaries.
-    #   if: |
-    #     steps.rust_artifact_cache.outputs.cache-hit != 'true' &&
-    #     ! contains(github.event.head_commit.message, '[skip build]')
-    #   uses: actions/cache@v3
-    #   with:
-    #     # rust-sgx-base changes RUSTUP_HOME and CARGO_HOME to workaround GHA overriding HOME
-    #     # Key is a hash of all the Cargo.lock files. If lock files change, invalidate cache so build pulls fresh packages.
-    #     path: |
-    #       /opt/cargo/git
-    #       /opt/cargo/registry/index
-    #       /opt/cargo/registry/cache
-    #     key: ${{ secrets.CACHE_BUSTER }}-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-cargo-cache
-
-    - name: Write environment values
-      if: "! contains(github.event.head_commit.message, '[skip build]')"
-      run: |
-        mkdir -p "${GITHUB_WORKSPACE}/.tmp"
-        echo "${{ secrets.DEV_ENCLAVE_SIGNING_KEY }}" > "${ENCLAVE_SIGNING_KEY_PATH}"
-        echo "${{ secrets.DEV_MINTING_TRUST_ROOT_PUBLIC }}" > "${MINTING_TRUST_ROOT_PUBLIC_KEY_PEM}"
 
     - name: Build rust hardware projects
       if: |
@@ -233,19 +183,6 @@ jobs:
       uses: ./.github/actions/mobilecoin-cache-go-binaries
       with:
         cache_buster: ${{ secrets.CACHE_BUSTER }}
-
-    # - name: Cache go build binaries
-    #   if: "! contains(github.event.head_commit.message, '[skip build]')"
-    #   id: go_artifact_cache
-    #   uses: actions/cache@v3
-    #   with:
-    #     path: |
-    #       go_build_artifacts
-    #     # Key is a hash of all the .go, go.* and .proto files.
-    #     # if code changes, invalidate cache and rebuild
-    #     key: ${{ secrets.CACHE_BUSTER }}-${{ runner.os }}-${{ hashFiles('go-grpc-gateway/**/*.go', 'go-grpc-gateway/go.*', '**/*.proto') }}-go-build-artifacts
-
-
 
     - name: Build go-grpc-gateway
       if: |
@@ -357,29 +294,6 @@ jobs:
       with:
         cache_buster: ${{ secrets.CACHE_BUSTER }}
 
-    # - name: Cache rust build binaries
-    #   if: "! contains(github.event.head_commit.message, '[skip docker]')"
-    #   id: rust_artifact_cache
-    #   uses: actions/cache@v3
-    #   with:
-    #     path: |
-    #       rust_build_artifacts
-    #     key: ${{ secrets.CACHE_BUSTER }}-${{ runner.os }}-${{ hashFiles('**/*.rs', '**/*.proto', '**/Cargo.toml') }}-rust-build-artifacts
-
-    # - name: Cache go build binaries
-    #   if: "! contains(github.event.head_commit.message, '[skip docker]')"
-    #   id: go_artifact_cache
-    #   uses: actions/cache@v3
-    #   with:
-    #     path: |
-    #       go_build_artifacts
-    #     key: ${{ secrets.CACHE_BUSTER }}-${{ runner.os }}-${{ hashFiles('go-grpc-gateway/**/*.go', 'go-grpc-gateway/go.*', '**/*.proto') }}-go-build-artifacts
-
-    # - name: Generate version metadata
-    #   id: meta
-    #   run: |
-    #     .internal-ci/util/metadata.sh
-
     - name: Generate Docker Tags
       if: "! contains(github.event.head_commit.message, '[skip docker]')"
       id: docker_meta
@@ -440,11 +354,6 @@ jobs:
     - name: Checkout
       if: "! contains(github.event.head_commit.message, '[skip charts]')"
       uses: actions/checkout@v3
-
-    # - name: Generate version metadata
-    #   id: meta
-    #   run: |
-    #     .internal-ci/util/metadata.sh
 
     - name: Package and publish chart
       if: "! contains(github.event.head_commit.message, '[skip charts]')"
