@@ -26,6 +26,7 @@ jobs:
       branch: ${{ steps.meta.outputs.branch }}
       namespace: ${{ steps.meta.outputs.namespace }}
       tag: ${{ steps.meta.outputs.tag }}
+      docker_tag: ${{ steps.meta.outputs.docker_tag }}
       docker_org: ${{ env.DOCKER_ORG }}
       previous_release: ${{ env.PREVIOUS_RELEASE }}
 
@@ -86,12 +87,13 @@ jobs:
       MINTING_TRUST_ROOT_PUBLIC_KEY_PEM: ${{ github.workspace }}/.tmp/minting_trust_root.public.pem
     steps:
     - name: Checkout
+      if: "! contains(github.event.head_commit.message, '[skip build]')"
       uses: actions/checkout@v3
 
     - name: Cache rust build binaries
       if: "! contains(github.event.head_commit.message, '[skip build]')"
       id: rust_artifact_cache
-      uses: ./.github/actions/mobilecoin-cache-rust-binary
+      uses: ./.github/actions/mobilecoin-cache-rust-binaries
       with:
         cache_buster: ${{ secrets.CACHE_BUSTER }}
 
@@ -131,6 +133,7 @@ jobs:
     #     key: ${{ secrets.CACHE_BUSTER }}-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-cargo-cache
 
     - name: Write environment values
+      if: "! contains(github.event.head_commit.message, '[skip build]')"
       run: |
         mkdir -p "${GITHUB_WORKSPACE}/.tmp"
         echo "${{ secrets.DEV_ENCLAVE_SIGNING_KEY }}" > "${ENCLAVE_SIGNING_KEY_PATH}"
@@ -197,12 +200,12 @@ jobs:
           sgx_sign dump -enclave "${i}" -dumpfile /dev/null -cssfile ${css}.css
         done
 
-    - name: check artifacts
+    - name: Check artifacts
       if: "! contains(github.event.head_commit.message, '[skip build]')"
       run: |
         ls -alR rust_build_artifacts
 
-    - name: Upload Artifacts
+    - name: Upload artifacts
       if: "! contains(github.event.head_commit.message, '[skip build]')"
       uses: actions/upload-artifact@v3
       with:
@@ -215,6 +218,7 @@ jobs:
       image: golang:1.16.4
     steps:
     - name: Checkout
+      if: "! contains(github.event.head_commit.message, '[skip build]')"
       uses: actions/checkout@v3
 
     - name: Add protobuf-compiler
@@ -226,17 +230,26 @@ jobs:
     - name: Cache go build binaries
       if: "! contains(github.event.head_commit.message, '[skip build]')"
       id: go_artifact_cache
-      uses: actions/cache@v3
+      uses: ./.github/actions/mobilecoin-cache-go-binaries
       with:
-        path: |
-          go_build_artifacts
-        # Key is a hash of all the .go, go.* and .proto files.
-        # if code changes, invalidate cache and rebuild
-        key: ${{ secrets.CACHE_BUSTER }}-${{ runner.os }}-${{ hashFiles('go-grpc-gateway/**/*.go', 'go-grpc-gateway/go.*', '**/*.proto') }}-go-build-artifacts
+        cache_buster: ${{ secrets.CACHE_BUSTER }}
+
+    # - name: Cache go build binaries
+    #   if: "! contains(github.event.head_commit.message, '[skip build]')"
+    #   id: go_artifact_cache
+    #   uses: actions/cache@v3
+    #   with:
+    #     path: |
+    #       go_build_artifacts
+    #     # Key is a hash of all the .go, go.* and .proto files.
+    #     # if code changes, invalidate cache and rebuild
+    #     key: ${{ secrets.CACHE_BUSTER }}-${{ runner.os }}-${{ hashFiles('go-grpc-gateway/**/*.go', 'go-grpc-gateway/go.*', '**/*.proto') }}-go-build-artifacts
+
+
 
     - name: Build go-grpc-gateway
       if: |
-        steps.rust_artifact_cache.outputs.cache-hit != 'true' &&
+        steps.go_artifact_cache.outputs.cache-hit != 'true' &&
         ! contains(github.event.head_commit.message, '[skip build]')
       run: |
         cd go-grpc-gateway
@@ -264,6 +277,7 @@ jobs:
     runs-on: [self-hosted, Linux, small]
     steps:
     - name: Checkout
+      if: "! contains(github.event.head_commit.message, '[skip docker]')"
       uses: actions/checkout@v3
 
     - name: Generate Docker Tags
@@ -310,6 +324,7 @@ jobs:
     - build-go-projects
     - build-rust-hardware-projects
     - docker-base
+    - generate-metadata
     strategy:
       matrix:
         image:
@@ -325,12 +340,20 @@ jobs:
         - watcher
     steps:
     - name: Checkout
+      if: "! contains(github.event.head_commit.message, '[skip docker]')"
       uses: actions/checkout@v3
 
     - name: Cache rust build binaries
-      if: "! contains(github.event.head_commit.message, '[skip build]')"
+      if: "! contains(github.event.head_commit.message, '[skip docker]')"
       id: rust_artifact_cache
-      uses: ./.github/actions/mobilecoin-cache-rust-binary
+      uses: ./.github/actions/mobilecoin-cache-rust-binaries
+      with:
+        cache_buster: ${{ secrets.CACHE_BUSTER }}
+
+    - name: Cache go build binaries
+      if: "! contains(github.event.head_commit.message, '[skip docker]')"
+      id: go_artifact_cache
+      uses: ./.github/actions/mobilecoin-cache-go-binaries
       with:
         cache_buster: ${{ secrets.CACHE_BUSTER }}
 
@@ -343,19 +366,19 @@ jobs:
     #       rust_build_artifacts
     #     key: ${{ secrets.CACHE_BUSTER }}-${{ runner.os }}-${{ hashFiles('**/*.rs', '**/*.proto', '**/Cargo.toml') }}-rust-build-artifacts
 
-    - name: Cache go build binaries
-      if: "! contains(github.event.head_commit.message, '[skip docker]')"
-      id: go_artifact_cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          go_build_artifacts
-        key: ${{ secrets.CACHE_BUSTER }}-${{ runner.os }}-${{ hashFiles('go-grpc-gateway/**/*.go', 'go-grpc-gateway/go.*', '**/*.proto') }}-go-build-artifacts
+    # - name: Cache go build binaries
+    #   if: "! contains(github.event.head_commit.message, '[skip docker]')"
+    #   id: go_artifact_cache
+    #   uses: actions/cache@v3
+    #   with:
+    #     path: |
+    #       go_build_artifacts
+    #     key: ${{ secrets.CACHE_BUSTER }}-${{ runner.os }}-${{ hashFiles('go-grpc-gateway/**/*.go', 'go-grpc-gateway/go.*', '**/*.proto') }}-go-build-artifacts
 
-    - name: Generate version metadata
-      id: meta
-      run: |
-        .internal-ci/util/metadata.sh
+    # - name: Generate version metadata
+    #   id: meta
+    #   run: |
+    #     .internal-ci/util/metadata.sh
 
     - name: Generate Docker Tags
       if: "! contains(github.event.head_commit.message, '[skip docker]')"
@@ -363,7 +386,7 @@ jobs:
       uses: docker/metadata-action@v3
       with:
         images: ${{ env.DOCKER_ORG }}/${{ matrix.image }}
-        tags: ${{ steps.meta.outputs.docker_tag }}
+        tags: ${{ needs.generate-metadata.outputs.docker_tag }}
 
     - name: Set up Docker Buildx
       if: "! contains(github.event.head_commit.message, '[skip docker]')"
@@ -385,8 +408,8 @@ jobs:
           REPO_ORG=${{ env.DOCKER_ORG }}
           RUST_BIN_PATH=rust_build_artifacts
           GO_BIN_PATH=go_build_artifacts
-        cache-from: type=registry,ref=${{ env.DOCKER_ORG }}/${{ matrix.image }}:buildcache-${{ steps.meta.outputs.branch }}
-        cache-to: type=registry,ref=${{ env.DOCKER_ORG }}/${{ matrix.image }}:buildcache-${{ steps.meta.outputs.branch }}
+        cache-from: type=registry,ref=${{ env.DOCKER_ORG }}/${{ matrix.image }}:buildcache-${{ needs.generate-metadata.outputs.branch }}
+        cache-to: type=registry,ref=${{ env.DOCKER_ORG }}/${{ matrix.image }}:buildcache-${{ needs.generate-metadata.outputs.branch }}
         context: .
         file: .internal-ci/docker/Dockerfile.${{ matrix.image }}
         labels: ${{ steps.docker_meta.outputs.labels }}
@@ -397,6 +420,7 @@ jobs:
     runs-on: [self-hosted, Linux, small]
     needs:
     - docker
+    - generate-metadata
     strategy:
       # Updating the chart index can only be done by one process at a time.
       max-parallel: 1
@@ -414,12 +438,13 @@ jobs:
         - watcher
     steps:
     - name: Checkout
+      if: "! contains(github.event.head_commit.message, '[skip charts]')"
       uses: actions/checkout@v3
 
-    - name: Generate version metadata
-      id: meta
-      run: |
-        .internal-ci/util/metadata.sh
+    # - name: Generate version metadata
+    #   id: meta
+    #   run: |
+    #     .internal-ci/util/metadata.sh
 
     - name: Package and publish chart
       if: "! contains(github.event.head_commit.message, '[skip charts]')"
@@ -430,8 +455,8 @@ jobs:
         aws_secret_access_key: ${{ secrets.PUBLIC_CHARTS_AWS_SECRET_ACCESS_KEY }}
         aws_default_region: us-east-2
         chart_repo: s3://charts.mobilecoin.com
-        chart_app_version: ${{ steps.meta.outputs.tag }}
-        chart_version: ${{ steps.meta.outputs.tag }}
+        chart_app_version: ${{ needs.generate-metadata.outputs.tag }}
+        chart_version: ${{ needs.generate-metadata.outputs.tag }}
         chart_path: .internal-ci/helm/${{ matrix.chart }}
 
 #################################
