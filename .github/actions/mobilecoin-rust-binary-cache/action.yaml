@@ -1,5 +1,5 @@
-name: Mobilecoin Cargo Cache
-description: Standardized Cargo cache setup
+name: Mobilecoin Rust Binary Cache
+description: Standardized rust binary cache setup
 
 inputs:
   cache_buster:
@@ -15,17 +15,10 @@ inputs:
     required: false
     default: "'**/*.rs', '**/*.proto', '**/Cargo.toml'"
 
-
 outputs:
-  branch:
-    description: "normalized branch name"
-    value: ${{ steps.meta.outputs.branch }}
-  namespace:
-    description: "namespace based off normalized branch name"
-    value: ${{ steps.meta.outputs.namespace }}
-  tag:
-    description: "artifact semver tag based off of branch patterns"
-    value: ${{ steps.meta.outputs.tag }}
+  cache-hit:
+    description: "did we get a cache hit?"
+    value: ${{ steps.rust_artifact_cache.outputs.cache-hit }}
 
 runs:
   using: composite
