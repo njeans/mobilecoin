@@ -81,6 +81,10 @@ jobs:
     runs-on: [self-hosted, Linux, large]
     container:
       image: mobilecoin/rust-sgx-base@sha256:04ec88c2fe03f4303ad9619baf4576fc6001198c0699041b1475fc5039bf7376
+    env:
+      ENCLAVE_SIGNING_KEY_PATH: ${{ github.workspace }}/.tmp/enclave_signing.pem
+      MINTING_TRUST_ROOT_PUBLIC_KEY_PEM: ${{ github.workspace }}/.tmp/minting_trust_root.public.pem
+
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -112,12 +116,10 @@ jobs:
         key: ${{ secrets.CACHE_BUSTER }}-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-cargo-cache
 
     - name: Write environment values
-      env:
-        ENCLAVE_SIGNING_KEY_PATH: ${{ github.workspace }}/.tmp/enclave_signing.pem
-        ENCLAVE_SIGNING_KEY: ${{ secrets.DEV_ENCLAVE_SIGNING_KEY }}
       run: |
         mkdir -p ${GITHUB_WORKSPACE}/.tmp
-        echo "${ENCLAVE_SIGNING_KEY}" > "${ENCLAVE_SIGNING_KEY_PATH}"
+        echo "{{ secrets.DEV_ENCLAVE_SIGNING_KEY }}" > "${ENCLAVE_SIGNING_KEY_PATH}"
+        echo -n "{{ secret.DEV_MINTING_TRUST_ROOT_PUBLIC" }}" > "${MINTING_TRUST_ROOT_PUBLIC_KEY_PEM}""
 
     - name: Build rust hardware projects
       if: |
@@ -128,10 +130,10 @@ jobs:
         SGX_MODE: HW
         RUST_BACKTRACE: full
         MOB_RELEASE: 1
-        CONSENSUS_ENCLAVE_PRIVKEY: ${{ github.workspace }}/.tmp/enclave_signing.pem
-        LEDGER_ENCLAVE_PRIVKEY: ${{ github.workspace }}/.tmp/enclave_signing.pem
-        VIEW_ENCLAVE_PRIVKEY: ${{ github.workspace }}/.tmp/enclave_signing.pem
-        INGEST_ENCLAVE_PRIVKEY: ${{ github.workspace }}/.tmp/enclave_signing.pem
+        CONSENSUS_ENCLAVE_PRIVKEY: ${{ env.ENCLAVE_SIGNING_KEY_PATH }}
+        LEDGER_ENCLAVE_PRIVKEY: ${{ env.ENCLAVE_SIGNING_KEY_PATH }}
+        VIEW_ENCLAVE_PRIVKEY: ${{ env.ENCLAVE_SIGNING_KEY_PATH }}
+        INGEST_ENCLAVE_PRIVKEY: ${{ env.ENCLAVE_SIGNING_KEY_PATH }}
       run: |
         cargo build --release \
           -p mc-admin-http-gateway \
@@ -154,8 +156,8 @@ jobs:
           -p mc-util-grpc-admin-tool \
           -p mc-util-grpc-token-generator \
           -p mc-util-keyfile \
-          -p mc-util-seeded-ed25519-key-gen
-          -p mc-watcher \
+          -p mc-util-seeded-ed25519-key-gen \
+          -p mc-watcher
 
     - name: Copy artifacts to cache
       if: |
@@ -409,28 +411,28 @@ jobs:
         chart_version: ${{ steps.meta.outputs.tag }}
         chart_path: .internal-ci/helm/${{ matrix.chart }}
 
-# #################################
-# # Reset existing namespace
-# #################################
-#   dev-reset:
-#     runs-on: [self-hosted, Linux, small]
-#     needs:
-#     - generate-metadata
-#     steps:
-#     - name: Reset development namespace
-#       if: "! contains(github.event.head_commit.message, '[skip dev-reset]')"
-#       uses: mobilecoinofficial/gha-workflow-dispatch@v2.1.3
-#       with:
-#         workflow: mobilecoin-dispatch-dev-reset
-#         token: ${{ secrets.ACTIONS_TOKEN }}
-#         wait-for-completion: true
-#         wait-for-completion-timeout: 30m
-#         wait-for-completion-interval: 30s
-#         display-workflow-run-url-interval: 30s
-#         inputs: |
-#           {
-#             "namespace": "${{ needs.generate-metadata.outputs.namespace }}"
-#           }
+#################################
+# Reset existing namespace
+#################################
+  dev-reset:
+    runs-on: [self-hosted, Linux, small]
+    needs:
+    - generate-metadata
+    steps:
+    - name: Reset development namespace
+      if: "! contains(github.event.head_commit.message, '[skip dev-reset]')"
+      uses: mobilecoinofficial/gha-workflow-dispatch@v2.1.3
+      with:
+        workflow: mobilecoin-dispatch-dev-reset
+        token: ${{ secrets.ACTIONS_TOKEN }}
+        wait-for-completion: true
+        wait-for-completion-timeout: 30m
+        wait-for-completion-interval: 30s
+        display-workflow-run-url-interval: 30s
+        inputs: |
+          {
+            "namespace": "${{ needs.generate-metadata.outputs.namespace }}"
+          }
 
 # #######################################
 # # Deploy previous release to namespace
@@ -481,33 +483,34 @@ jobs:
 #             "ingest_color": "blue"
 #           }
 
-# ###############################################
-# # Deploy current version to namespace block v0
-# ###############################################
-#   current-release-v0-deploy:
-#     runs-on: [self-hosted, Linux, small]
-#     needs:
-#     - previous-release-test
-#     - generate-metadata
-#     - charts
-#     steps:
-#     - name: Deploy Release
-#       if: "! contains(github.event.head_commit.message, '[skip current-release-v0-deploy]')"
-#       uses: mobilecoinofficial/gha-workflow-dispatch@v2.1.3
-#       with:
-#         workflow: mobilecoin-dispatch-dev-deploy
-#         token: ${{ secrets.ACTIONS_TOKEN }}
-#         wait-for-completion: true
-#         wait-for-completion-timeout: 30m
-#         wait-for-completion-interval: 30s
-#         display-workflow-run-url-interval: 30s
-#         inputs: |
-#           {
-#             "namespace": "${{ needs.generate-metadata.outputs.namespace }}",
-#             "version": "${{ needs.generate-metadata.outputs.tag }}",
-#             "docker_image_org": "${{ needs.generate-metadata.outputs.docker_org }}",
-#             "ingest_color": "green"
-#           }
+###############################################
+# Deploy current version to namespace block v0
+###############################################
+  current-release-v0-deploy:
+    runs-on: [self-hosted, Linux, small]
+    needs:
+    - previous-release-test
+    - generate-metadata
+    - charts
+    steps:
+    - name: Deploy Release
+      if: "! contains(github.event.head_commit.message, '[skip current-release-v0-deploy]')"
+      uses: mobilecoinofficial/gha-workflow-dispatch@v2.1.3
+      with:
+        workflow: mobilecoin-dispatch-dev-deploy
+        token: ${{ secrets.ACTIONS_TOKEN }}
+        wait-for-completion: true
+        wait-for-completion-timeout: 30m
+        wait-for-completion-interval: 30s
+        display-workflow-run-url-interval: 30s
+        inputs: |
+          {
+            "namespace": "${{ needs.generate-metadata.outputs.namespace }}",
+            "version": "${{ needs.generate-metadata.outputs.tag }}",
+            "docker_image_org": "${{ needs.generate-metadata.outputs.docker_org }}",
+            "ingest_color": "green",
+            "enable_minting_config": "true"
+          }
 
 #   current-release-v0-test:
 #     runs-on: [self-hosted, Linux, small]

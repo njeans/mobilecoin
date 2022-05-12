@@ -25,6 +25,11 @@ on:
         type: string
         required: true
         default: blue
+      enable_minting_config:
+        description: "Enable minting config"
+        type: boolean
+        required: true
+        default: false
 
 jobs:
   deploy:
@@ -34,6 +39,7 @@ jobs:
       version: ${{ github.event.inputs.version }}
       docker_image_org: ${{ github.event.inputs.docker_image_org }}
       ingest_color: ${{ github.event.inputs.ingest_color }}
+      enable_minting_config: ${{ github.event.inputs.enable_minting_config }}
     secrets:
       RANCHER_CLUSTER: ${{ secrets.RANCHER_CLUSTER }}
       RANCHER_URL: ${{ secrets.RANCHER_URL }}
