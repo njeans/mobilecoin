@@ -197,7 +197,7 @@ jobs:
 
     - name: Create minting key secrets
       if: inputs.enable_minting_config == 'true'
-      uses: mobilecoinofficial/gha-k8s-toolbox@8788e3b24b7bdcc5b3b8a6254f1844a7e9a503ab
+      uses: mobilecoinofficial/gha-k8s-toolbox@a7e1900d8e11e9bb7ffcccaad687a33b12d0542d
       with:
         action: secrets-create-from-file
         namespace: ${{ inputs.namespace }}
@@ -209,6 +209,7 @@ jobs:
 
     - name: Create tokens configmap
       if: inputs.enable_minting_config == 'true'
+      uses: mobilecoinofficial/gha-k8s-toolbox@a7e1900d8e11e9bb7ffcccaad687a33b12d0542d
       with:
         action: configmap-create-from-file
         namespace: ${{ inputs.namespace }}
