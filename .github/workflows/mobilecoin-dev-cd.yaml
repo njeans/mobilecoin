@@ -489,7 +489,7 @@ jobs:
   current-release-v0-deploy:
     runs-on: [self-hosted, Linux, small]
     needs:
-    - previous-release-test
+    # - previous-release-test
     - generate-metadata
     - charts
     steps:
