@@ -48,7 +48,7 @@ use core::{
 use displaydoc::Display;
 use lazy_static::lazy_static;
 use mc_oblivious_traits::{HeapORAMStorage, ORAMStorage, ORAMStorageCreator};
-use mc_sgx_compat::sync::Mutex;
+use mc_sgx_compat::Mutex;
 use rand_core::{CryptoRng, RngCore};
 use subtle::ConstantTimeEq;
 use typenum::{PartialDiv, PowerOfTwo, Sum, Unsigned, U8};

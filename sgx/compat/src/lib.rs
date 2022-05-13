@@ -18,9 +18,22 @@ cfg_if! {
         }
 
         pub use mc_sgx_sync as sync;
+        pub use sync::Mutex;
         pub use mc_sgx_debug::eprintln;
 
         pub use mc_sgx_service::{report, verify_report, calc_sealed_data_size, seal_data, get_sealed_payload_sizes, unseal_data};
+    }
+    else if #[cfg(feature = "sgx_sdk")] {
+        extern crate sgx_alloc;
+        extern crate sgx_tstd as std;
+
+        mod thread {
+            pub use std::thread::panicking;
+        }
+        pub use std::panic;
+        pub use std::sync;
+        pub use std::sync::{SgxMutex as Mutex};
+        pub use std::eprintln;
     }
     else {
         extern crate std;
@@ -29,6 +42,8 @@ cfg_if! {
         }
         pub use std::panic;
         pub use std::sync;
+        pub use sync::Mutex;
+
         pub use std::eprintln;
 
         mod mock_service;

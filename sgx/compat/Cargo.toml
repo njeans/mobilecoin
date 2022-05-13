@@ -14,6 +14,9 @@ mc-sgx-debug = { path = "../debug", optional = true }
 mc-sgx-service = { path = "../service", optional = true }
 mc-sgx-types = { path = "../types" }
 
+sgx_alloc = { git = "https://github.com/apache/teaclave-sgx-sdk.git", optional = true }
+sgx_tstd = { git = "https://github.com/apache/teaclave-sgx-sdk.git" , optional = true }
+
 [features]
 # In default mode we depend on std, which is appropriate for `cargo test`
 default = []
@@ -24,4 +27,8 @@ sgx = [
     'mc-sgx-sync', 'mc-sgx-sync/mc-sgx-panic',
     'mc-sgx-debug',
     'mc-sgx-service',
+]
+
+sgx_sdk = [
+  'sgx_alloc','sgx_tstd'
 ]
