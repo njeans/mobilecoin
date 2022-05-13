@@ -31,7 +31,7 @@ PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'
 MOB_RELEASE = os.getenv('MOB_RELEASE', '1')
 CARGO_FLAGS = '--release'
 TARGET_DIR = 'target/release'
-WORK_DIR = '/tmp/mc-local-network'
+WORK_DIR =  os.path.join(PROJECT_DIR, TARGET_DIR, 'mc-local-network')
 MINTING_KEYS_DIR = os.path.join(WORK_DIR, 'minting-keys')
 CLI_PORT = 31337
 
@@ -222,7 +222,7 @@ class Node:
                 { "token_id": 0, "minimum_fee": self.minimum_fee },
                 {
                     "token_id": 1,
-                    "minimum_fee": 1000,
+                    "minimum_fee": 1024,
                     "governors": {
                         "signers": open(os.path.join(MINTING_KEYS_DIR, 'governor1.pub')).read(),
                         "threshold": 1
@@ -230,7 +230,7 @@ class Node:
                 },
                 {
                     "token_id": 2,
-                    "minimum_fee": 1000,
+                    "minimum_fee": 1024,
                     "governors": {
                         "signers": open(os.path.join(MINTING_KEYS_DIR, 'governor2.pub')).read(),
                         "threshold": 1
