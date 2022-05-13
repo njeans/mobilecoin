@@ -155,7 +155,7 @@ jobs:
         .internal-ci/util/generate_wallet_seeds.sh
 
     - name: Create wallet keys seed secrets
-      uses: mobilecoinofficial/gha-k8s-toolbox@add-secret-from-dir
+      uses: mobilecoinofficial/gha-k8s-toolbox@9480a5caeaf7d7a6ef3ebbabdeea37c8864eb4b0
       with:
         action: sample-keys-create-secrets
         namespace: ${{ inputs.namespace }}
@@ -198,7 +198,7 @@ jobs:
 
     - name: Create minting key secrets
       if: inputs.enable_minting_config == 'true'
-      uses: mobilecoinofficial/gha-k8s-toolbox@add-secret-from-dir
+      uses: mobilecoinofficial/gha-k8s-toolbox@9480a5caeaf7d7a6ef3ebbabdeea37c8864eb4b0
       with:
         action: secrets-create-from-file
         namespace: ${{ inputs.namespace }}
@@ -210,7 +210,7 @@ jobs:
 
     - name: Create tokens configmap
       if: inputs.enable_minting_config == 'true'
-      uses: mobilecoinofficial/gha-k8s-toolbox@add-secret-from-dir
+      uses: mobilecoinofficial/gha-k8s-toolbox@9480a5caeaf7d7a6ef3ebbabdeea37c8864eb4b0
       with:
         action: configmap-create-from-file
         namespace: ${{ inputs.namespace }}
