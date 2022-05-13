@@ -155,7 +155,7 @@ jobs:
         .internal-ci/util/generate_wallet_seeds.sh
 
     - name: Create wallet keys seed secrets
-      uses: mobilecoinofficial/gha-k8s-toolbox@v1
+      uses: mobilecoinofficial/gha-k8s-toolbox@a7e1900d8e11e9bb7ffcccaad687a33b12d0542d
       with:
         action: sample-keys-create-secrets
         namespace: ${{ inputs.namespace }}
