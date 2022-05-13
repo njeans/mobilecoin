@@ -7,7 +7,7 @@ license = "GPL-3.0"
 
 [dependencies]
 # mobilecoin
-mc-sgx-compat = { path = "../../../sgx/compat", features = ["sgx_sdk"] }
+mc-sgx-compat = { path = "../../../sgx/compat" }
 
 # mc-oblivious
 aligned-cmov = "2.2"
@@ -30,3 +30,6 @@ blake2 = { version = "0.10.2", default-features = false }
 [dev-dependencies]
 lazy_static = "1.4"
 mc-util-test-helper = { path = "../../../util/test-helper" }
+
+[feature]
+sdk = ["mc-sgx-compat/sgx_sdk"]
